@@ -59,8 +59,11 @@ body {
   transition: background .22s, color .22s;
 }
 
-/* ── Shared layout ── */
+/* ── Global container ── */
 .hd, .brief, .strip-inner, .strip-info, .sess-wrap {
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
   padding-left: 32px;
   padding-right: 32px;
 }
@@ -75,5 +78,11 @@ body {
   .hd, .brief, .strip-inner, .strip-info, .sess-wrap {
     padding-left: 16px;
     padding-right: 16px;
+  }
+}
+
+@media (max-width: 960px) {
+  .hd, .brief, .strip-inner, .strip-info, .sess-wrap {
+    max-width: 100%;
   }
 }

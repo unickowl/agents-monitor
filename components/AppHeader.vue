@@ -1,18 +1,20 @@
 <!-- components/AppHeader.vue -->
 <template>
-  <header class="hd">
-    <a class="hd-logo" href="#">owl monitor</a>
-    <div class="hd-chips">
-      <div v-for="s in liveSessions" :key="s.sessionId" class="chip">
-        <span class="chip-dot"></span>
-        {{ s.project }}
+  <header class="hd-outer">
+    <div class="hd">
+      <a class="hd-logo" href="#">owl monitor</a>
+      <div class="hd-chips">
+        <div v-for="s in liveSessions" :key="s.sessionId" class="chip">
+          <span class="chip-dot"></span>
+          {{ s.project }}
+        </div>
       </div>
-    </div>
-    <div class="hd-right">
-      <span class="hd-date">{{ dateStr }}</span>
-      <button class="theme-btn" :title="isDark ? 'Light mode' : 'Dark mode'" @click="toggleTheme">
-        {{ isDark ? '○' : '◐' }}
-      </button>
+      <div class="hd-right">
+        <span class="hd-date">{{ dateStr }}</span>
+        <button class="theme-btn" :title="isDark ? 'Light mode' : 'Dark mode'" @click="toggleTheme">
+          {{ isDark ? '○' : '◐' }}
+        </button>
+      </div>
     </div>
   </header>
 </template>
@@ -44,13 +46,16 @@ function applyTheme() {
 </script>
 
 <style scoped>
-.hd {
+.hd-outer {
   position: sticky; top: 0; z-index: 50;
-  height: 52px;
-  display: flex; align-items: center; gap: 12px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   transition: background .22s;
+}
+
+.hd {
+  height: 52px;
+  display: flex; align-items: center; gap: 12px;
 }
 
 .hd-logo {

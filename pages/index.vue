@@ -29,7 +29,11 @@
           :spark-highlight="6 - selectedDay"
         />
       </template>
-      <div v-else class="empty-day">No sessions recorded for this day</div>
+      <div v-else class="empty-day">
+        <div class="empty-rule"></div>
+        <span class="empty-label">No sessions recorded</span>
+        <div class="empty-rule"></div>
+      </div>
     </main>
   </div>
 </template>
@@ -75,9 +79,17 @@ onUnmounted(() => stopPolling())
 }
 
 .empty-day {
-  padding: 48px 0;
-  text-align: center;
-  color: var(--faint);
-  font-family: var(--mono); font-size: 13px;
+  padding: 56px 0;
+  display: flex; align-items: center; gap: 20px;
+}
+
+.empty-rule {
+  flex: 1; height: 1px; background: var(--border);
+}
+
+.empty-label {
+  font-family: var(--mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .14em;
+  color: var(--faint); white-space: nowrap; flex-shrink: 0;
 }
 </style>

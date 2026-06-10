@@ -2,9 +2,9 @@
 <template>
   <section class="brief">
     <div class="brief-nav">
-      <button class="nav-btn" :disabled="selectedDay >= 6" @click="$emit('shift', -1)">←</button>
+      <button class="nav-btn" :disabled="selectedDay >= 6" @click="$emit('shift', 1)">←</button>
       <span class="period-label">{{ periodLabel }}</span>
-      <button class="nav-btn" :disabled="selectedDay <= 0" @click="$emit('shift', 1)">→</button>
+      <button class="nav-btn" :disabled="selectedDay <= 0" @click="$emit('shift', -1)">→</button>
     </div>
     <div class="brief-hl">
       <span class="brief-n">{{ stats.sessionCount }}</span>

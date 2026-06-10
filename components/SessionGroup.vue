@@ -29,8 +29,7 @@
       <div class="sess-body">
         <div class="sess-title">{{ s.title || '(no title)' }}</div>
         <div class="sess-meta">
-          <span class="agent-dot" :class="s.agent"></span>
-          <span class="meta-tag">{{ s.agent }}</span>
+          <span class="agent-pill" :class="s.agent">{{ s.agent }}</span>
           <span class="meta-sep">·</span>
           <span class="meta-tag">{{ s.branch }}</span>
           <span class="meta-sep">·</span>
@@ -136,6 +135,7 @@ function fallbackCopy(text: string) {
 
 <style scoped>
 .proj-grp { padding-top: 28px; padding-bottom: 2px; }
+.proj-grp + .proj-grp { border-top: 1px solid var(--border); margin-top: 6px; }
 
 .proj-hd {
   display: flex; align-items: center; gap: 10px;
@@ -189,14 +189,27 @@ function fallbackCopy(text: string) {
 .sess-title {
   font-size: 14.5px; font-weight: 500;
   color: var(--text); line-height: 1.4;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .sess-meta { display: flex; align-items: center; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
 
-.agent-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-.agent-dot.codex { background: var(--codex); }
-.agent-dot.claude { background: var(--claude); }
+.agent-pill {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 1px 6px; border-radius: 3px; flex-shrink: 0;
+}
+.agent-pill.codex {
+  background: color-mix(in srgb, var(--codex) 13%, var(--bg));
+  color: var(--codex);
+}
+.agent-pill.claude {
+  background: color-mix(in srgb, var(--claude) 13%, var(--bg));
+  color: var(--claude);
+}
 
 .meta-tag { font-family: var(--mono); font-size: 10.5px; color: var(--faint); }
 .meta-sep { font-size: 9px; color: var(--border-strong); }

@@ -126,7 +126,7 @@ const days = computed(() => {
 
 .strip-inner {
   display: flex; gap: 3px;
-  align-items: flex-end;
+  align-items: stretch;
   padding-top: 12px; padding-bottom: 10px;
 }
 
