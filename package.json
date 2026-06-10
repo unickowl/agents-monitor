@@ -1,5 +1,5 @@
 {
-  "name": "job-monitor",
+  "name": "agents-monitor",
   "private": true,
   "type": "module",
   "scripts": {
