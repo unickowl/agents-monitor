@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Monitor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root { --font: -apple-system,'Inter','Helvetica Neue',Arial,sans-serif; }
+
+[data-theme="light"] {
+  --bg:        #f4f4f6;
+  --surface:   #ffffff;
+  --surface2:  #f0f0f3;
+  --border:    #e4e4e8;
+  --text:      #16161a;
+  --text2:     #6e6e80;
+  --text3:     #a8a8b8;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow:    0 4px 16px rgba(0,0,0,.08);
+  --green:     #16a34a;
+  --green-bg:  rgba(22,163,74,.08);
+}
+[data-theme="dark"] {
+  --bg:        #0d0d10;
+  --surface:   #17171c;
+  --surface2:  #1f1f26;
+  --border:    #2a2a35;
+  --text:      #f0f0f5;
+  --text2:     #8888a0;
+  --text3:     #4a4a60;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+  --shadow:    0 4px 16px rgba(0,0,0,.5);
+  --green:     #4ade80;
+  --green-bg:  rgba(74,222,128,.07);
+}
+
+/* Project color palette */
+:root {
+  --p1: #6366f1; --p1a: rgba(99,102,241,.15);
+  --p2: #f59e0b; --p2a: rgba(245,158,11,.15);
+  --p3: #10b981; --p3a: rgba(16,185,129,.15);
+  --p4: #ec4899; --p4a: rgba(236,72,153,.15);
+  --p5: #8b5cf6; --p5a: rgba(139,92,246,.15);
+  --claude: #e8601c; --claude-a: rgba(232,96,28,.12);
+  --codex:  #6366f1; --codex-a:  rgba(99,102,241,.12);
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  min-height: 100vh;
+  transition: background .25s, color .25s;
+}
+
+/* ═══════════ TOP HEADER ═══════════ */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.header-left { display: flex; align-items: center; gap: 20px; }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-mark {
+  width: 22px; height: 22px;
+  background: linear-gradient(135deg, var(--codex) 0%, var(--claude) 100%);
+  border-radius: 6px;
+}
+.logo-name { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
+.live-strip { display: flex; gap: 6px; }
+.live-chip {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 500;
+  color: var(--text2);
+  background: var(--green-bg);
+  border: 1px solid rgba(22,163,74,.2);
+  border-radius: 100px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+[data-theme="dark"] .live-chip { border-color: rgba(74,222,128,.2); }
+.live-chip:hover { color: var(--text); }
+.live-chip-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+.live-chip-agent {
+  font-size: 9px; font-weight: 800; letter-spacing: .06em;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-date { font-size: 12px; color: var(--text3); }
+.theme-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 14px;
+  transition: background .1s;
+}
+.theme-btn:hover { background: var(--border); }
+
+/* ═══════════ CHART SECTION ═══════════ */
+.chart-section {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 24px 0;
+}
+.chart-header {
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.chart-title { font-size: 12px; font-weight: 600; color: var(--text2); }
+.chart-legend { display: flex; gap: 14px; }
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text2); cursor: pointer;
+  padding: 2px 0;
+  transition: opacity .15s;
+}
+.legend-item:hover { color: var(--text); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* Bar chart */
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 88px;
+  position: relative;
+}
+.chart-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  cursor: pointer;
+  position: relative;
+}
+.chart-bar-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+  transition: opacity .2s, transform .15s;
+  position: relative;
+}
+.chart-day:hover .chart-bar-wrap { opacity: .85; transform: scaleY(1.03); transform-origin: bottom; }
+.chart-day.selected .chart-bar-wrap { transform: scaleY(1.03); transform-origin: bottom; }
+.chart-day.selected::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+}
+.bar-seg { width: 100%; min-height: 2px; transition: all .2s; }
+.chart-day-label {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 7px;
+  font-variant-numeric: tabular-nums;
+  padding-bottom: 10px;
+  transition: color .15s;
+}
+.chart-day.selected .chart-day-label { color: var(--text); font-weight: 600; }
+
+/* Tooltip */
+.chart-tooltip {
+  position: absolute;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  line-height: 1.6;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity .15s;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+}
+.chart-tooltip.show { opacity: 1; }
+.tt-date { font-weight: 700; margin-bottom: 2px; }
+.tt-row { display: flex; align-items: center; gap: 5px; }
+.tt-dot { width: 6px; height: 6px; border-radius: 1px; }
+
+/* ═══════════ BODY LAYOUT ═══════════ */
+.body-wrap {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 52px - 123px);
+}
+
+/* ═══════════ SIDEBAR ═══════════ */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 16px 0;
+  overflow-y: auto;
+}
+.sb-section { padding: 0 14px; margin-bottom: 22px; }
+.sb-label {
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: .1em; font-weight: 700;
+  color: var(--text3); margin-bottom: 8px;
+}
+.sb-item {
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background .1s;
+  margin-bottom: 1px;
+}
+.sb-item:hover { background: var(--surface2); }
+.sb-item.active { background: var(--surface2); }
+.sb-item-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.sb-item-name {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  display: flex; align-items: center; gap: 6px;
+}
+.sb-item-count { font-size: 10px; color: var(--text3); }
+
+/* Sparkline */
+.sparkline {
+  display: flex; align-items: flex-end;
+  gap: 2px; height: 16px;
+}
+.spark-bar {
+  flex: 1; border-radius: 1px;
+  min-height: 2px;
+  transition: opacity .2s;
+}
+.sb-item:hover .spark-bar { opacity: .7; }
+
+/* ═══════════ MAIN CONTENT ═══════════ */
+.main {
+  padding: 20px 24px 80px;
+  overflow-y: auto;
+}
+
+/* Day digest card */
+.digest-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  animation: fadeSlide .2s ease;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.digest-date {
+  min-width: 120px;
+}
+.digest-date-main {
+  font-size: 20px; font-weight: 800; letter-spacing: -.03em;
+  line-height: 1;
+}
+.digest-date-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
+.digest-divider {
+  width: 1px; background: var(--border);
+  height: 40px; margin: 0 20px; flex-shrink: 0;
+}
+.digest-stats {
+  display: flex; gap: 28px; flex: 1;
+}
+.digest-stat {}
+.digest-stat-val {
+  font-size: 18px; font-weight: 700; letter-spacing: -.02em;
+}
+.digest-stat-label { font-size: 11px; color: var(--text2); }
+.digest-warning {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.4;
+  max-width: 260px;
+}
+.warning-icon { font-size: 14px; flex-shrink: 0; }
+
+/* Session groups */
+.group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.group-name {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700; color: var(--text);
+}
+.group-color-bar {
+  width: 3px; height: 14px; border-radius: 2px;
+}
+.group-meta { font-size: 11px; color: var(--text3); display: flex; gap: 14px; }
+
+/* Session row */
+.srow {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .1s;
+}
+.srow:last-child { border-bottom: none; }
+.srow:hover { background: var(--surface2); }
+.srow.selected { background: var(--surface2); }
+
+.srow-time {
+  font-size: 11px; color: var(--text3);
+  min-width: 38px; margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.srow-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  margin-top: 5px; flex-shrink: 0;
+}
+.srow-body { flex: 1; min-width: 0; }
+.srow-task {
+  font-size: 13px; line-height: 1.45; color: var(--text);
+  margin-bottom: 5px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.srow-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.tag {
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  border: 1px solid var(--border);
+}
+.srow-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end; justify-content: space-between;
+  gap: 6px; flex-shrink: 0;
+}
+.srow-dur { font-size: 11px; color: var(--text3); }
+.srow-dur.live { color: var(--green); font-weight: 700; }
+
+.resume-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px;
+  cursor: pointer; transition: all .15s;
+  white-space: nowrap;
+}
+.resume-btn:hover {
+  color: var(--codex);
+  border-color: var(--codex);
+  background: var(--codex-a);
+}
+.resume-btn svg { flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span class="logo-name">Job Monitor</span>
+    </div>
+    <div class="live-strip">
+      <div class="live-chip">
+        <div class="live-chip-dot"></div>
+        <span class="live-chip-agent" style="color:var(--codex)">Codex</span>
+        harbor / main · 1h 32m
+      </div>
+      <div class="live-chip">
+        <div class="live-chip-dot"></div>
+        <span class="live-chip-agent" style="color:var(--claude)">Claude</span>
+        job-monitor · 47m
+      </div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="header-date">Tue, Jun 10</span>
+    <div class="theme-btn" onclick="toggleTheme()">◑</div>
+  </div>
+</div>
+
+<!-- CHART -->
+<div class="chart-section">
+  <div class="chart-header">
+    <span class="chart-title">Activity — last 7 days</span>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--p1)"></div>harbor</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--p2)"></div>owlpay_harbor_portal</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--p3)"></div>owlpay_landing_page</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--p4)"></div>global-delivery</div>
+    </div>
+  </div>
+
+  <div class="chart-bars" id="chartBars">
+    <!-- JS will render bars -->
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body-wrap">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Projects</div>
+
+      <div class="sb-item active" onclick="filterProject('all',this)">
+        <div class="sb-item-top">
+          <span class="sb-item-name">
+            <span style="width:8px;height:8px;border-radius:2px;background:var(--text3);display:inline-block"></span>
+            All projects
+          </span>
+          <span class="sb-item-count">12</span>
+        </div>
+        <div class="sparkline" id="sp-all"></div>
+      </div>
+
+      <div class="sb-item" onclick="filterProject('harbor',this)">
+        <div class="sb-item-top">
+          <span class="sb-item-name">
+            <span style="width:8px;height:8px;border-radius:2px;background:var(--p1);display:inline-block"></span>
+            harbor
+          </span>
+          <span class="sb-item-count">6</span>
+        </div>
+        <div class="sparkline" id="sp-harbor"></div>
+      </div>
+
+      <div class="sb-item" onclick="filterProject('portal',this)">
+        <div class="sb-item-top">
+          <span class="sb-item-name">
+            <span style="width:8px;height:8px;border-radius:2px;background:var(--p2);display:inline-block"></span>
+            owlpay_harbor_portal
+          </span>
+          <span class="sb-item-count">2</span>
+        </div>
+        <div class="sparkline" id="sp-portal"></div>
+      </div>
+
+      <div class="sb-item" onclick="filterProject('landing',this)">
+        <div class="sb-item-top">
+          <span class="sb-item-name">
+            <span style="width:8px;height:8px;border-radius:2px;background:var(--p3);display:inline-block"></span>
+            owlpay_landing_page
+          </span>
+          <span class="sb-item-count">2</span>
+        </div>
+        <div class="sparkline" id="sp-landing"></div>
+      </div>
+
+      <div class="sb-item" onclick="filterProject('delivery',this)">
+        <div class="sb-item-top">
+          <span class="sb-item-name">
+            <span style="width:8px;height:8px;border-radius:2px;background:var(--p4);display:inline-block"></span>
+            global-delivery
+          </span>
+          <span class="sb-item-count">1</span>
+        </div>
+        <div class="sparkline" id="sp-delivery"></div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Agent</div>
+      <div class="sb-item">
+        <div class="sb-item-top">
+          <span class="sb-item-name" style="color:var(--codex)">● Codex</span>
+          <span class="sb-item-count">8</span>
+        </div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-item-top">
+          <span class="sb-item-name" style="color:var(--claude)">● Claude</span>
+          <span class="sb-item-count">4</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainContent">
+    <!-- JS renders digest + session list -->
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────
+const PROJECTS = {
+  harbor:   { label: 'harbor',                color: 'var(--p1)' },
+  portal:   { label: 'owlpay_harbor_portal',  color: 'var(--p2)' },
+  landing:  { label: 'owlpay_landing_page',   color: 'var(--p3)' },
+  delivery: { label: 'global-delivery',       color: 'var(--p4)' },
+};
+
+// Per-day activity: sessions per project [harbor, portal, landing, delivery]
+// Index 0 = 7 days ago, index 6 = today
+const DAILY = [
+  { label:'Jun 4',  mins:[80,40,0,0]   },
+  { label:'Jun 5',  mins:[270,0,50,0]  },
+  { label:'Jun 6',  mins:[0,90,0,0]    },
+  { label:'Jun 7',  mins:[20,0,0,180]  },
+  { label:'Jun 8',  mins:[130,0,45,0]  },
+  { label:'Jun 9',  mins:[310,70,0,0]  },
+  { label:'Jun 10', mins:[185,0,18,0]  },
+];
+
+const SESSIONS = {
+  'Jun 10': [
+    { project:'harbor', time:'14:32', agent:'codex', task:'查看並審閱這個計劃，告訴我你的結論 — docs/plans/2026-06-09-harbor-301-mfa-contract-fixes.md', branch:'main', model:'gpt-5.5', dur:'live' },
+    { project:'harbor', time:'11:05', agent:'codex', task:'查看前端 portal 專案中的 feat/HARBOR-302 分支，比對後端 api 專案的 PR #308，統整後端實作狀況，前端是否需要調整', branch:'main', model:'gpt-5.5', dur:'4h 15m' },
+    { project:'landing', time:'09:17', agent:'codex', task:'針對 feat/seo-fixes 這個分支今天的所有 commit，告訴我她想解決什麼問題？以及是否為有效的方法？還有缺漏的地方嗎？', branch:'feat/seo-fixes', model:'gpt-5.5', dur:'18m' },
+    { project:'harbor', time:'08:53', agent:'claude', task:'在這個專案建立一個可以讓我常駐的監控台，主要拉取全域 claude 與 codex 的工作歷程進度，讓我隨時可以掌握正在執行什麼任務', branch:'HEAD', model:'claude-sonnet', dur:'live' },
+  ],
+  'Jun 9': [
+    { project:'harbor', time:'15:41', agent:'codex', task:'查看前端 portal 專案中的 HARBOR-313 worktree，比對後端 api 專案的 PR #308，統整後端實作狀況，前端是否需要調整', branch:'main', model:'gpt-5.5', dur:'2h 08m' },
+    { project:'harbor', time:'11:32', agent:'codex', task:'查看並審閱這個計劃的完成度 — docs/plans/2026-06-09-harbor-301-mfa-contract-fixes.md', branch:'main', model:'gpt-5.5', dur:'1h 45m' },
+    { project:'portal', time:'09:04', agent:'claude', task:'查看底下 portal 這個前端專案的 PR #92，reviewer feedback 後另一位工程師的結論是部分 blocking feedback 的修法有漏洞', branch:'main', model:'claude-sonnet', dur:'1h 22m' },
+  ],
+  'Jun 8': [
+    { project:'harbor', time:'14:10', agent:'codex', task:'實作 HARBOR-313 MFA 前端流程，對應後端 API contract v2', branch:'feat/HARBOR-313', model:'gpt-5.5', dur:'2h 18m' },
+    { project:'landing', time:'09:30', agent:'codex', task:'分析 SEO 優化需求，針對 landing page 的 meta tag 與 structured data 提出改進方案', branch:'feat/seo', model:'gpt-5.5', dur:'45m' },
+  ],
+};
+
+// ── State ─────────────────────────────────────────────────────
+let selectedDay = 'Jun 9'; // default: yesterday
+let selectedProject = 'all';
+
+// ── Chart rendering ───────────────────────────────────────────
+function renderChart() {
+  const container = document.getElementById('chartBars');
+  const maxMins = Math.max(...DAILY.map(d => d.mins.reduce((a,b) => a+b, 0)));
+  const projKeys = Object.keys(PROJECTS);
+  const projColors = projKeys.map(k => PROJECTS[k].color);
+
+  container.innerHTML = '';
+
+  DAILY.forEach((day, i) => {
+    const total = day.mins.reduce((a,b) => a+b, 0);
+    const heightPct = total / maxMins;
+    const isSelected = day.label === selectedDay;
+
+    const col = document.createElement('div');
+    col.className = 'chart-day' + (isSelected ? ' selected' : '');
+    col.onclick = () => selectDay(day.label);
+
+    // Tooltip
+    const tt = document.createElement('div');
+    tt.className = 'chart-tooltip';
+    const ttRows = projKeys.map((k,j) => day.mins[j] > 0
+      ? `<div class="tt-row"><div class="tt-dot" style="background:${projColors[j]}"></div>${PROJECTS[k].label}: ${day.mins[j]}m</div>`
+      : ''
+    ).join('');
+    tt.innerHTML = `<div class="tt-date">${day.label}</div>${ttRows}`;
+    col.appendChild(tt);
+
+    col.addEventListener('mouseenter', () => {
+      tt.style.left = '50%';
+      tt.classList.add('show');
+    });
+    col.addEventListener('mouseleave', () => tt.classList.remove('show'));
+
+    // Bar
+    const barWrap = document.createElement('div');
+    barWrap.className = 'chart-bar-wrap';
+    barWrap.style.height = Math.max(4, Math.round(heightPct * 72)) + 'px';
+
+    projKeys.forEach((k, j) => {
+      if (day.mins[j] === 0) return;
+      const seg = document.createElement('div');
+      seg.className = 'bar-seg';
+      const segH = (day.mins[j] / total) * 100;
+      seg.style.height = segH + '%';
+      seg.style.background = projColors[j];
+      seg.style.opacity = isSelected ? '1' : '0.65';
+      barWrap.appendChild(seg);
+    });
+
+    const label = document.createElement('div');
+    label.className = 'chart-day-label';
+    label.textContent = day.label.replace('Jun ', '');
+
+    col.appendChild(barWrap);
+    col.appendChild(label);
+    container.appendChild(col);
+  });
+}
+
+// ── Sparklines ────────────────────────────────────────────────
+function renderSparklines() {
+  const projKeys = Object.keys(PROJECTS);
+  const projColors = projKeys.map(k => PROJECTS[k].color);
+
+  // All
+  const allTotals = DAILY.map(d => d.mins.reduce((a,b)=>a+b,0));
+  renderSparkline('sp-all', allTotals, 'var(--text3)');
+
+  projKeys.forEach((k, i) => {
+    const vals = DAILY.map(d => d.mins[i]);
+    renderSparkline('sp-'+k, vals, projColors[i]);
+  });
+}
+
+function renderSparkline(id, vals, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const max = Math.max(...vals, 1);
+  el.innerHTML = vals.map(v => {
+    const h = Math.max(2, Math.round((v/max)*14));
+    return `<div class="spark-bar" style="height:${h}px;background:${color};opacity:${v>0?0.7:0.15}"></div>`;
+  }).join('');
+}
+
+// ── Day digest ────────────────────────────────────────────────
+function renderDigest(dayLabel) {
+  const sessions = SESSIONS[dayLabel] || [];
+  const totalMins = DAILY.find(d => d.label === dayLabel)?.mins.reduce((a,b)=>a+b,0) || 0;
+  const hrs = Math.floor(totalMins/60);
+  const mins = totalMins % 60;
+  const durStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+  const projects = [...new Set(sessions.map(s=>s.project))];
+  const unfinished = sessions.filter(s => s.dur !== 'live' && parseInt(s.dur) > 60 || s.dur.includes('h'));
+  const isToday = dayLabel === 'Jun 10';
+
+  return `
+    <div class="digest-card">
+      <div class="digest-date">
+        <div class="digest-date-main">${isToday ? 'Today' : dayLabel === 'Jun 9' ? 'Yesterday' : dayLabel}</div>
+        <div class="digest-date-sub">${isToday ? 'Jun 10, 2026' : dayLabel + ', 2026'}</div>
+      </div>
+      <div class="digest-divider"></div>
+      <div class="digest-stats">
+        <div class="digest-stat">
+          <div class="digest-stat-val">${sessions.length}</div>
+          <div class="digest-stat-label">sessions</div>
+        </div>
+        <div class="digest-stat">
+          <div class="digest-stat-val">${projects.length}</div>
+          <div class="digest-stat-label">projects</div>
+        </div>
+        <div class="digest-stat">
+          <div class="digest-stat-val">${durStr}</div>
+          <div class="digest-stat-label">total time</div>
+        </div>
+      </div>
+      ${unfinished.length > 0 ? `
+      <div class="digest-warning">
+        <span class="warning-icon">⚠</span>
+        <span>${unfinished.length} long session${unfinished.length>1?'s':''} on <strong>${[...new Set(unfinished.map(s=>PROJECTS[s.project].label))].join(', ')}</strong> — may need follow-up</span>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+// ── Session list ──────────────────────────────────────────────
+function renderSessions(dayLabel, projectFilter) {
+  let sessions = SESSIONS[dayLabel] || [];
+  if (projectFilter !== 'all') {
+    sessions = sessions.filter(s => s.project === projectFilter);
+  }
+
+  // Group by project
+  const byProject = {};
+  sessions.forEach(s => {
+    if (!byProject[s.project]) byProject[s.project] = [];
+    byProject[s.project].push(s);
+  });
+
+  if (sessions.length === 0) {
+    return `<div style="color:var(--text3);font-size:13px;padding:20px 0">No sessions for this filter.</div>`;
+  }
+
+  return Object.entries(byProject).map(([proj, rows]) => {
+    const p = PROJECTS[proj];
+    const rowsHtml = rows.map(s => {
+      const isLive = s.dur === 'live';
+      return `
+        <div class="srow">
+          <span class="srow-time">${s.time}</span>
+          <div class="srow-dot" style="background:${s.agent==='codex'?'var(--codex)':'var(--claude)'}"></div>
+          <div class="srow-body">
+            <div class="srow-task">${s.task}</div>
+            <div class="srow-tags">
+              <span class="tag">${s.branch}</span>
+              <span class="tag">${s.model}</span>
+              <span class="tag" style="color:${s.agent==='codex'?'var(--codex)':'var(--claude)'}">${s.agent}</span>
+            </div>
+          </div>
+          <div class="srow-right">
+            <div class="resume-btn" onclick="copied(this,'${s.agent}',event)">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Resume
+            </div>
+            <span class="srow-dur ${isLive ? 'live' : ''}">${isLive ? 'running…' : s.dur}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="group">
+        <div class="group-header">
+          <div class="group-name">
+            <div class="group-color-bar" style="background:${p.color}"></div>
+            ${p.label}
+          </div>
+          <div class="group-meta">
+            <span>${rows.length} session${rows.length>1?'s':''}</span>
+          </div>
+        </div>
+        ${rowsHtml}
+      </div>`;
+  }).join('');
+}
+
+// ── Render main ───────────────────────────────────────────────
+function renderMain() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = renderDigest(selectedDay) + renderSessions(selectedDay, selectedProject);
+}
+
+function selectDay(label) {
+  selectedDay = label;
+  renderChart();
+  renderMain();
+}
+
+function filterProject(key, el) {
+  selectedProject = key;
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  renderMain();
+}
+
+function toggleTheme() {
+  const h = document.documentElement;
+  h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', h.dataset.theme);
+}
+
+function copied(btn, agent, e) {
+  e.stopPropagation();
+  const cmd = agent === 'codex'
+    ? 'codex resume 019eaabc-592d-7aa3-b920-69e178db420c'
+    : 'claude --resume 175a0c83-839a-4fd1-b28f-aa8a9688c14c';
+  navigator.clipboard?.writeText(cmd).catch(()=>{});
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✓ Copied';
+  btn.style.color = 'var(--green)';
+  btn.style.borderColor = 'var(--green)';
+  setTimeout(() => { btn.innerHTML = orig; btn.style.color=''; btn.style.borderColor=''; }, 1600);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+const saved = localStorage.getItem('theme');
+if (saved) document.documentElement.dataset.theme = saved;
+
+renderChart();
+renderSparklines();
+renderMain();
+</script>
+</body>
+</html>

@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Owl Monitor — The Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #f6f6f4;
+  --surface: #ffffff;
+  --surface-2: #ededeb;
+  --text: #0e0e0c;
+  --muted: #69695f;
+  --faint: #a8a89c;
+  --border: #e2e2dc;
+  --border-strong: #c4c4bc;
+  --accent: #2563eb;
+  --accent-bg: #eff6ff;
+  --live: #16a34a;
+  --live-bg: #f0fdf4;
+  --live-border: #bbf7d0;
+  --codex: #4f46e5;
+  --claude: #ea580c;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --warn-border: #fde68a;
+  --ff: 'Outfit', system-ui, sans-serif;
+  --mono: 'DM Mono', 'Fira Mono', 'Consolas', monospace;
+  --r: 5px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] {
+  --bg: #0b0b09;
+  --surface: #141412;
+  --surface-2: #1c1c1a;
+  --text: #eeeee8;
+  --muted: #8a8a7e;
+  --faint: #525248;
+  --border: #242420;
+  --border-strong: #38382e;
+  --accent: #3b82f6;
+  --accent-bg: #1a2a50;
+  --live: #22c55e;
+  --live-bg: #0c2014;
+  --live-border: #166534;
+  --codex: #818cf8;
+  --claude: #fb923c;
+  --warn: #fbbf24;
+  --warn-bg: #1c1a08;
+  --warn-border: #78350f;
+}
+
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ff);
+  font-weight: 400;
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background .22s, color .22s;
+}
+
+/* ─── HEADER ─── */
+.hd {
+  position: sticky; top: 0; z-index: 50;
+  height: 52px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 32px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  transition: background .22s;
+}
+
+.hd-logo {
+  font-family: var(--mono);
+  font-size: 12px; font-weight: 500;
+  letter-spacing: .08em;
+  color: var(--text);
+  text-decoration: none;
+  flex-shrink: 0;
+  opacity: .88;
+}
+
+.hd-chips { display: flex; gap: 5px; flex: 1; overflow: hidden; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px 2px 6px;
+  background: var(--live-bg);
+  border: 1px solid var(--live-border);
+  border-radius: 20px;
+  font-family: var(--mono); font-size: 10.5px;
+  color: var(--live);
+  white-space: nowrap; flex-shrink: 0;
+}
+
+.chip-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--live);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .4; transform: scale(.7); }
+}
+
+.hd-right {
+  display: flex; align-items: center; gap: 14px;
+  flex-shrink: 0;
+}
+
+.hd-date {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--muted);
+}
+
+.theme-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--muted); font-size: 13px; line-height: 1;
+  transition: .15s var(--ease);
+}
+.theme-btn:hover { border-color: var(--border-strong); color: var(--text); }
+
+/* ─── HERO BRIEF ─── */
+.brief {
+  padding: 40px 32px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brief-nav {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 18px;
+}
+
+.nav-btn {
+  background: none; border: none;
+  cursor: pointer;
+  color: var(--muted); font-size: 18px;
+  padding: 0 4px; line-height: 1;
+  border-radius: var(--r);
+  transition: .12s var(--ease);
+}
+.nav-btn:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
+.nav-btn:disabled { opacity: .2; cursor: default; }
+
+.period-label {
+  font-family: var(--mono);
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--muted);
+  min-width: 76px;
+}
+
+.brief-hl {
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  line-height: 1;
+}
+
+.brief-n {
+  font-size: clamp(68px, 10vw, 116px);
+  font-weight: 700;
+  letter-spacing: -.045em;
+  color: var(--text);
+  font-feature-settings: 'tnum' 1;
+  line-height: .88;
+}
+
+.brief-unit {
+  font-size: clamp(24px, 3.2vw, 40px);
+  font-weight: 300;
+  color: var(--muted);
+  margin-left: 12px;
+  letter-spacing: -.015em;
+}
+
+/* row 1: main metrics */
+.brief-sub {
+  margin-top: 11px;
+  font-family: var(--mono); font-size: 12.5px;
+  color: var(--muted);
+  display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+}
+
+.sub-val { color: var(--text); font-weight: 500; }
+
+/* row 2: secondary metrics */
+.brief-sub2 {
+  margin-top: 6px;
+  font-family: var(--mono); font-size: 11.5px;
+  color: var(--faint);
+  display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+}
+
+.sub2-accent {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.warn-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 1px 8px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: 20px;
+  font-size: 11px; color: var(--warn);
+}
+
+/* ─── DAY STRIP ─── */
+.strip {
+  border-bottom: 1px solid var(--border);
+}
+
+/* hover info bar above the bars */
+.strip-info {
+  height: 28px;
+  padding: 0 32px;
+  display: flex; align-items: center;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.strip-info-text {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity .15s var(--ease), transform .15s var(--ease);
+  white-space: nowrap;
+}
+
+.strip-info-text.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.strip-inner {
+  display: flex; gap: 3px;
+  align-items: flex-end;
+  padding: 12px 32px 10px;
+}
+
+.strip-col {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 5px;
+  cursor: pointer;
+  padding: 4px 2px 0;
+  border-radius: var(--r);
+  transition: background .12s var(--ease);
+}
+.strip-col:hover { background: var(--surface-2); }
+
+.strip-bar-wrap {
+  flex: 1; display: flex; align-items: flex-end;
+  width: 100%;
+}
+
+.strip-bar {
+  width: 100%;
+  display: flex; flex-direction: column;
+  border-radius: 3px; overflow: hidden;
+  transition: opacity .2s var(--ease), outline .12s var(--ease);
+}
+
+.strip-seg { width: 100%; min-height: 1px; flex-shrink: 0; }
+
+.strip-lbl {
+  font-family: var(--mono); font-size: 9.5px;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--faint);
+  transition: color .12s var(--ease);
+}
+
+.strip-col:hover .strip-lbl,
+.strip-col.on .strip-lbl { color: var(--muted); }
+
+.strip-col.on .strip-bar {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.strip-inner:has(.strip-col.on) .strip-col:not(.on) .strip-bar {
+  opacity: .25;
+}
+
+/* ─── SESSION LIST ─── */
+.sess-wrap {
+  padding: 0 32px;
+  max-width: 1000px;
+}
+
+.proj-grp { padding-top: 28px; padding-bottom: 2px; }
+
+/* Project header: name + stats + sparkline + hairline */
+.proj-hd {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 2px;
+}
+
+.proj-hd-name {
+  font-family: var(--mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .14em;
+  color: var(--faint);
+  flex-shrink: 0;
+}
+
+.proj-hd-stats {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--faint);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* inline sparkline in project header */
+.proj-spark {
+  display: inline-flex; align-items: flex-end;
+  gap: 1.5px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.sp-bar {
+  width: 3px;
+  border-radius: 1px;
+  min-height: 1.5px;
+  transition: opacity .15s;
+}
+
+.proj-hd-line {
+  flex: 1;
+  height: 1px; background: var(--border);
+}
+
+/* ─── SESSION ROW ─── */
+.sess-row {
+  display: grid;
+  grid-template-columns: 50px 1fr auto;
+  column-gap: 14px;
+  padding: 11px 8px;
+  margin: 0 -8px;
+  cursor: pointer;
+  border-radius: var(--r);
+  border-top: 1px solid transparent;
+  transition: background .12s var(--ease);
+}
+
+.sess-row + .sess-row { border-top-color: var(--border); }
+.sess-row:hover,
+.sess-row.open { background: var(--surface); border-top-color: transparent; }
+.sess-row:hover + .sess-row,
+.sess-row.open + .sess-row { border-top-color: transparent; }
+
+.sess-time {
+  font-family: var(--mono); font-size: 11.5px;
+  color: var(--muted); padding-top: 1px;
+  line-height: 1.4; grid-row: 1;
+}
+
+.sess-body { min-width: 0; grid-row: 1; }
+
+.sess-title {
+  font-size: 14.5px; font-weight: 500;
+  color: var(--text); line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sess-title.is-live { color: var(--live); }
+
+.sess-meta {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 3px; flex-wrap: wrap;
+}
+
+.agent-dot {
+  width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+}
+.agent-dot.codex { background: var(--codex); }
+.agent-dot.claude { background: var(--claude); }
+
+.meta-tag {
+  font-family: var(--mono); font-size: 10.5px;
+  color: var(--faint);
+}
+
+.meta-sep { font-size: 9px; color: var(--border-strong); }
+
+.live-badge {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--live);
+  background: var(--live-bg);
+  border: 1px solid var(--live-border);
+  padding: 0 6px; border-radius: 20px;
+}
+
+/* Right column: duration bar + text */
+.sess-dur-col {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 4px;
+  grid-row: 1;
+  padding-top: 2px;
+}
+
+.dur-track {
+  width: 44px; height: 2.5px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dur-fill {
+  height: 100%;
+  border-radius: 2px;
+  opacity: .7;
+  transition: width .3s var(--ease);
+}
+
+.sess-dur {
+  font-family: var(--mono); font-size: 11.5px;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+}
+.sess-dur.is-live { color: var(--live); }
+
+/* ─── EXPAND PANEL ─── */
+.sess-expand {
+  grid-column: 1 / -1; grid-row: 2;
+  max-height: 0; overflow: hidden;
+  transition: max-height .26s var(--ease);
+}
+.sess-row.open .sess-expand { max-height: 72px; }
+
+.expand-inner {
+  padding: 8px 0 4px 64px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.resume-code {
+  font-family: var(--mono); font-size: 10.5px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 5px 10px;
+  flex: 1; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0;
+}
+
+.copy-btn {
+  font-family: var(--mono); font-size: 10.5px;
+  padding: 5px 12px;
+  background: var(--text);
+  color: var(--bg);
+  border: none; border-radius: var(--r);
+  cursor: pointer; flex-shrink: 0;
+  transition: .12s var(--ease);
+}
+.copy-btn:hover { opacity: .82; }
+.copy-btn:active { transform: scale(.96); }
+.copy-btn.ok { background: var(--live); }
+
+/* ─── EMPTY STATE ─── */
+.empty-day {
+  padding: 48px 32px;
+  text-align: center;
+  color: var(--faint);
+  font-family: var(--mono); font-size: 13px;
+}
+
+.pb { height: 96px; }
+
+/* ─── RWD ─── */
+@media (max-width: 680px) {
+  .hd, .brief, .sess-wrap { padding-left: 16px; padding-right: 16px; }
+  .strip-inner, .strip-info { padding-left: 16px; padding-right: 16px; }
+  .brief-sub, .brief-sub2 { gap: 10px; font-size: 11.5px; }
+  .expand-inner { padding-left: 0; flex-wrap: wrap; }
+  .brief-n { font-size: clamp(56px, 16vw, 90px); }
+}
+
+@media (max-width: 420px) {
+  .hd-date { display: none; }
+  .brief-n { font-size: clamp(50px, 18vw, 72px); }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="hd">
+  <a class="hd-logo" href="#">owl monitor</a>
+  <div class="hd-chips" id="chips"></div>
+  <div class="hd-right">
+    <span class="hd-date" id="hd-date"></span>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">◐</button>
+  </div>
+</header>
+
+<!-- Hero Brief -->
+<section class="brief">
+  <div class="brief-nav">
+    <button class="nav-btn" onclick="shift(-1)">←</button>
+    <span class="period-label" id="period-lbl">Yesterday</span>
+    <button class="nav-btn" onclick="shift(1)" id="fwd-btn">→</button>
+  </div>
+  <div class="brief-hl">
+    <span class="brief-n" id="stat-n">0</span>
+    <span class="brief-unit">sessions</span>
+  </div>
+  <!-- Primary stats row -->
+  <div class="brief-sub">
+    <span><span class="sub-val" id="stat-proj">0</span> projects</span>
+    <span><span class="sub-val" id="stat-time">0m</span> total</span>
+    <span><span class="sub-val" id="stat-avg">0m</span> avg</span>
+    <span class="warn-pill" id="warn-pill" style="display:none">
+      ⚠ <span id="warn-n">0</span> unfinished
+    </span>
+  </div>
+  <!-- Secondary stats row -->
+  <div class="brief-sub2">
+    <span>most active: <span class="sub2-accent" id="stat-top">-</span></span>
+    <span><span class="sub2-accent" id="stat-tokens">0</span> tokens est.</span>
+  </div>
+</section>
+
+<!-- Day Strip -->
+<section class="strip">
+  <div class="strip-info">
+    <span class="strip-info-text" id="strip-hover"></span>
+  </div>
+  <div class="strip-inner" id="day-strip"></div>
+</section>
+
+<!-- Session List -->
+<main class="sess-wrap" id="sess-wrap"></main>
+
+<div class="pb"></div>
+
+<script>
+// ═══ Mock data ═══
+const PROJ = ['job-monitor', 'harbor', 'stitch', 'boilerplate'];
+const PCOL = {
+  'job-monitor': '#3b82f6',
+  'harbor': '#8b5cf6',
+  'stitch': '#10b981',
+  'boilerplate': '#f59e0b',
+};
+const TITLES = {
+  'job-monitor': [
+    'Add interactive stacked bar chart with hover',
+    'Fix tooltip overflow clipping at chart top boundary',
+    'Implement dark mode toggle with localStorage',
+    'Add responsive breakpoints for mobile layout',
+    'Build session card expand with resume panel',
+    'Design activity strip day-selector component',
+    'Setup Nuxt 3 server routes and API layer',
+    'Integrate better-sqlite3 for Codex history',
+    'Fix live session polling interval memory leak',
+    'Refine typography hierarchy and spacing scale',
+  ],
+  'harbor': [
+    'Refactor auth middleware for compliance',
+    'Fix race condition in async queue processor',
+    'Add Redis cache layer for frequently-hit routes',
+    'Update Prisma schema for multi-tenant user model',
+    'Implement webhook retry with exponential backoff',
+    'Debug slow query in analytics reporting endpoint',
+    'Add rate limiting middleware to public endpoints',
+    'Write integration tests for payment flow',
+  ],
+  'stitch': [
+    'Create component library scaffold with Storybook',
+    'Design token system — spacing, color, radius',
+    'Build button component with all variants',
+    'Typography scale implementation in CSS vars',
+    'Add automated visual regression tests',
+    'Input and form components first pass',
+  ],
+  'boilerplate': [
+    'Setup CI/CD pipeline with GitHub Actions',
+    'Configure ESLint, Prettier, TypeScript strict',
+    'Add Docker compose config for local dev',
+    'Initialize Nuxt 3 with SSR configuration',
+    'Add automated deployment to staging',
+  ],
+};
+const BRANCHES = [
+  'feat/dashboard', 'feat/auth', 'fix/race-condition',
+  'main', 'feat/cache', 'feat/webhooks', 'refactor/api',
+  'feat/dark-mode', 'fix/memory-leak', 'feat/design-tokens',
+];
+
+function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+// Build 7 days: DATA[0]=6 days ago, DATA[6]=today
+const DATA = [];
+for (let ago = 6; ago >= 0; ago--) {
+  const d = new Date();
+  d.setDate(d.getDate() - ago);
+  const count = ago === 0 ? rnd(2, 5) : rnd(7, 22);
+  const sessions = [];
+  for (let j = 0; j < count; j++) {
+    const p = PROJ[rnd(0, PROJ.length - 1)];
+    const titles = TITLES[p] || TITLES['boilerplate'];
+    const dur = rnd(12, 185);
+    sessions.push({
+      id: `s${ago}_${j}`,
+      project: p,
+      title: titles[rnd(0, titles.length - 1)],
+      agent: Math.random() > 0.28 ? 'codex' : 'claude',
+      model: Math.random() > 0.35 ? 'gpt-5.5' : 'claude-sonnet-4-6',
+      branch: BRANCHES[rnd(0, BRANCHES.length - 1)],
+      hh: rnd(8, 22), mm: rnd(0, 59),
+      dur,
+      tokens: Math.round(dur * rnd(620, 950)), // ~600-950 tokens/min as proxy
+      live: ago === 0 && j < 2,
+      done: !(ago === 1 && j < 2),
+      cwd: `/home/ubuntu/Code/owlting/${p}`,
+    });
+  }
+  sessions.sort((a, b) => (b.hh * 60 + b.mm) - (a.hh * 60 + a.mm));
+  DATA.push({ date: d, sessions });
+}
+
+// ═══ Precompute per-project 7-day sparklines ═══
+// sparklines[proj][i] = total minutes that project ran on DATA[i]
+const SPARKLINES = {};
+PROJ.forEach(p => {
+  SPARKLINES[p] = DATA.map(d =>
+    d.sessions.filter(s => s.project === p).reduce((s, x) => s + x.dur, 0)
+  );
+});
+
+// state: 0=today, 1=yesterday, ..., 6=6 days ago
+let sel = 1;
+
+// ═══ Helpers ═══
+function fmt2(n) { return String(n).padStart(2, '0'); }
+function fmtDur(m) {
+  if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60), r = m % 60;
+  return r ? `${h}h ${r}m` : `${h}h`;
+}
+function fmtTokens(n) {
+  if (n < 1000) return n + '';
+  return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+}
+function dayData() { return DATA[DATA.length - 1 - sel]; }
+
+// ═══ Render chips ═══
+function renderChips() {
+  const live = DATA[DATA.length - 1].sessions.filter(s => s.live);
+  document.getElementById('chips').innerHTML = live.map(s =>
+    `<div class="chip"><span class="chip-dot"></span>${s.project}</div>`
+  ).join('');
+}
+
+// ═══ Sparkline helper ═══
+function sparklineHtml(proj, highlightIdx) {
+  const vals = SPARKLINES[proj] || [];
+  const max = Math.max(...vals, 1);
+  const MAXH = 13;
+  const color = PCOL[proj] || '#888';
+  return vals.map((v, i) => {
+    const h = v === 0 ? 1.5 : Math.max(2, Math.round((v / max) * MAXH));
+    const isOn = i === highlightIdx;
+    const opacity = v === 0 ? 0.18 : (isOn ? 1 : 0.48);
+    return `<span class="sp-bar" style="height:${h}px;background:${color};opacity:${opacity}"></span>`;
+  }).join('');
+}
+
+// ═══ Render day strip ═══
+function renderStrip() {
+  const maxN = Math.max(...DATA.map(d => d.sessions.length));
+  const MAXH = 52;
+  const highlightI = DATA.length - 1 - sel; // index in DATA that is selected
+
+  document.getElementById('day-strip').innerHTML = DATA.map((d, i) => {
+    const ago = DATA.length - 1 - i;
+    const isOn = ago === sel;
+    const h = Math.max(4, Math.round((d.sessions.length / maxN) * MAXH));
+
+    const pc = {};
+    d.sessions.forEach(s => pc[s.project] = (pc[s.project] || 0) + 1);
+    const total = d.sessions.length;
+    const segs = Object.entries(pc)
+      .sort((a, b) => b[1] - a[1])
+      .map(([p, c]) => {
+        const sh = Math.max(1, Math.round((c / total) * h));
+        return `<div class="strip-seg" style="height:${sh}px;background:${PCOL[p] || '#888'};opacity:.72"></div>`;
+      }).join('');
+
+    let lbl;
+    if (ago === 0) lbl = 'Today';
+    else if (ago === 1) lbl = 'Yest';
+    else { const W = ['Su','Mo','Tu','We','Th','Fr','Sa']; lbl = W[d.date.getDay()]; }
+
+    const totalMin = d.sessions.reduce((s, x) => s + x.dur, 0);
+    const projs = new Set(d.sessions.map(s => s.project)).size;
+    const hoverInfo = `${d.sessions.length} sessions  ·  ${fmtDur(totalMin)}  ·  ${projs} projects`;
+
+    return `<div class="strip-col${isOn ? ' on' : ''}" data-hover="${hoverInfo}"
+        onclick="selectDay(${ago})"
+        onmouseenter="showStripHover(this)"
+        onmouseleave="hideStripHover()">
+      <div class="strip-bar-wrap">
+        <div class="strip-bar" style="height:${h}px">${segs}</div>
+      </div>
+      <div class="strip-lbl">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+function showStripHover(col) {
+  const el = document.getElementById('strip-hover');
+  el.textContent = col.dataset.hover;
+  el.classList.add('visible');
+}
+function hideStripHover() {
+  document.getElementById('strip-hover').classList.remove('visible');
+}
+
+// ═══ Render sessions ═══
+function renderSessions() {
+  const d = dayData();
+  const totalMin = d.sessions.reduce((s, x) => s + x.dur, 0);
+  const totalTokens = d.sessions.reduce((s, x) => s + x.tokens, 0);
+  const projs = new Set(d.sessions.map(s => s.project)).size;
+  const avg = d.sessions.length ? Math.round(totalMin / d.sessions.length) : 0;
+  const unfinished = d.sessions.filter(s => !s.done && s.dur > 60).length;
+
+  // Group by project to find most active
+  const projTime = {};
+  d.sessions.forEach(s => projTime[s.project] = (projTime[s.project] || 0) + s.dur);
+  const topProj = Object.entries(projTime).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+
+  countUp('stat-n', d.sessions.length);
+  document.getElementById('stat-proj').textContent = projs;
+  document.getElementById('stat-time').textContent = fmtDur(totalMin);
+  document.getElementById('stat-avg').textContent = fmtDur(avg);
+  document.getElementById('stat-top').textContent = topProj;
+  document.getElementById('stat-tokens').textContent = fmtTokens(totalTokens);
+
+  const wp = document.getElementById('warn-pill');
+  if (unfinished) { wp.style.display = ''; document.getElementById('warn-n').textContent = unfinished; }
+  else wp.style.display = 'none';
+
+  const lbl = document.getElementById('period-lbl');
+  const fwd = document.getElementById('fwd-btn');
+  if (sel === 0) { lbl.textContent = 'Today'; fwd.disabled = true; }
+  else if (sel === 1) { lbl.textContent = 'Yesterday'; fwd.disabled = false; }
+  else {
+    const W = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    lbl.textContent = W[d.date.getDay()]; fwd.disabled = false;
+  }
+
+  // Group sessions by project (preserve order of first appearance)
+  const grps = {};
+  d.sessions.forEach(s => { (grps[s.project] || (grps[s.project] = [])).push(s); });
+
+  // Max duration in this day for the duration bar scale
+  const maxDur = Math.max(...d.sessions.map(s => s.dur), 1);
+
+  // Which DATA index is currently selected (for sparkline highlight)
+  const sparkHighlight = DATA.length - 1 - sel;
+
+  if (!d.sessions.length) {
+    document.getElementById('sess-wrap').innerHTML = `<div class="empty-day">No sessions recorded</div>`;
+    return;
+  }
+
+  document.getElementById('sess-wrap').innerHTML = Object.entries(grps).map(([proj, sessions]) => {
+    const grpMin = sessions.reduce((s, x) => s + x.dur, 0);
+    const spark = sparklineHtml(proj, sparkHighlight);
+    const dotColor = PCOL[proj] || '#888';
+
+    return `<div class="proj-grp">
+      <div class="proj-hd">
+        <span class="proj-hd-name" style="color:${dotColor}">${proj}</span>
+        <span class="proj-hd-stats">${sessions.length} sessions · ${fmtDur(grpMin)}</span>
+        <span class="proj-spark">${spark}</span>
+        <span class="proj-hd-line"></span>
+      </div>
+      ${sessions.map(s => sessRow(s, maxDur)).join('')}
+    </div>`;
+  }).join('');
+}
+
+function sessRow(s, maxDur) {
+  const time = `${fmt2(s.hh)}:${fmt2(s.mm)}`;
+  const dur = s.live ? 'running...' : fmtDur(s.dur);
+  const durPct = Math.max(6, Math.round((s.dur / maxDur) * 100));
+  const fillColor = s.live ? 'var(--live)' : (PCOL[s.project] || 'var(--accent)');
+  const cmd = `cd ${s.cwd} && ${s.agent === 'codex' ? 'codex resume' : 'claude --resume'} ${s.id}`;
+
+  return `<div class="sess-row" id="row-${s.id}" onclick="toggleRow('${s.id}')">
+    <div class="sess-time">${time}</div>
+    <div class="sess-body">
+      <div class="sess-title${s.live ? ' is-live' : ''}">${s.title}</div>
+      <div class="sess-meta">
+        <span class="agent-dot ${s.agent}"></span>
+        <span class="meta-tag">${s.agent}</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-tag">${s.branch}</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-tag">${s.model}</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-tag">${fmtTokens(s.tokens)} tkn</span>
+        ${s.live ? '<span class="live-badge">live</span>' : ''}
+      </div>
+    </div>
+    <div class="sess-dur-col">
+      <div class="dur-track">
+        <div class="dur-fill" style="width:${durPct}%;background:${fillColor}"></div>
+      </div>
+      <div class="sess-dur${s.live ? ' is-live' : ''}">${dur}</div>
+    </div>
+    <div class="sess-expand">
+      <div class="expand-inner">
+        <div class="resume-code">${cmd}</div>
+        <button class="copy-btn" data-cmd="${cmd.replace(/"/g, '&quot;')}" onclick="doCopy(event,this)">Copy</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══ Count-up animation ═══
+function countUp(elId, target) {
+  const el = document.getElementById(elId);
+  const from = parseInt(el.textContent) || 0;
+  if (from === target) { el.textContent = target; return; }
+  const steps = 16, dur = 260;
+  let step = 0;
+  const tick = () => {
+    step++;
+    const t = step / steps;
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (target - from) * ease);
+    if (step < steps) setTimeout(tick, dur / steps);
+    else el.textContent = target;
+  };
+  tick();
+}
+
+// ═══ Interactions ═══
+function selectDay(d) { sel = d; renderStrip(); renderSessions(); }
+function shift(delta) { const n = sel + delta; if (n < 0 || n > 6) return; selectDay(n); }
+
+function toggleRow(id) {
+  document.getElementById('row-' + id).classList.toggle('open');
+}
+
+function doCopy(e, btn) {
+  e.stopPropagation();
+  navigator.clipboard.writeText(btn.dataset.cmd).catch(() => {});
+  btn.textContent = 'Copied';
+  btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 1600);
+}
+
+function toggleTheme() {
+  const h = document.documentElement;
+  h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.getElementById('theme-btn').textContent = h.dataset.theme === 'dark' ? '○' : '◐';
+}
+
+// ═══ Init ═══
+const now = new Date();
+document.getElementById('hd-date').textContent =
+  now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+renderChips();
+renderStrip();
+renderSessions();
+</script>
+</body>
+</html>

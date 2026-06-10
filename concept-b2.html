@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Monitor</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font: -apple-system,'Inter var','Inter','Helvetica Neue',Arial,sans-serif;
+  --p1: #5b5ef4; --p1s: rgba(91,94,244,.18);
+  --p2: #f0a500; --p2s: rgba(240,165,0,.18);
+  --p3: #0ea96e; --p3s: rgba(14,169,110,.18);
+  --p4: #e0457b; --p4s: rgba(224,69,123,.18);
+  --codex: #5b5ef4;
+  --claude: #e8601c;
+  --live: #22c55e;
+}
+[data-theme="light"] {
+  --bg:      #f2f2f5;
+  --glass:   rgba(255,255,255,.72);
+  --surface: #ffffff;
+  --raised:  #ffffff;
+  --border:  rgba(0,0,0,.07);
+  --text:    #111118;
+  --text2:   #72728a;
+  --text3:   #b0b0c4;
+  --glow:    rgba(91,94,244,.12);
+  --noise:   url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] {
+  --bg:      #0b0b0f;
+  --glass:   rgba(20,20,28,.8);
+  --surface: #14141c;
+  --raised:  #1c1c28;
+  --border:  rgba(255,255,255,.07);
+  --text:    #ededf5;
+  --text2:   #8080a0;
+  --text3:   #40405a;
+  --glow:    rgba(91,94,244,.15);
+}
+
+html { font-size: 13px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+  transition: background .3s, color .3s;
+}
+
+/* ───── HEADER ───── */
+.hdr {
+  position: sticky; top: 0; z-index: 200;
+  height: 52px;
+  display: flex; align-items: center;
+  padding: 0 28px;
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
+}
+.hdr-logo {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 14px; font-weight: 700; letter-spacing: -.02em;
+  margin-right: 24px;
+  color: var(--text);
+}
+.logo-name-text { white-space: nowrap; }
+.logo-gem {
+  width: 22px; height: 22px;
+  background: linear-gradient(135deg, var(--codex) 0%, var(--claude) 100%);
+  border-radius: 7px;
+  box-shadow: 0 2px 8px var(--glow);
+  flex-shrink: 0;
+}
+.hdr-live { display: flex; gap: 8px; flex: 1; }
+.live-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11.5px; font-weight: 500;
+  color: var(--text2);
+  padding: 5px 11px;
+  border-radius: 100px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.live-badge:hover { color: var(--text); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.lbdot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--live);
+  box-shadow: 0 0 0 3px rgba(34,197,94,.2);
+  animation: livepulse 2.5s ease-in-out infinite;
+}
+@keyframes livepulse {
+  0%,100% { box-shadow: 0 0 0 3px rgba(34,197,94,.2); }
+  50%      { box-shadow: 0 0 0 6px rgba(34,197,94,.05); }
+}
+.lb-agent { font-weight: 700; font-size: 9.5px; letter-spacing: .07em; }
+.hdr-right { display: flex; align-items: center; gap: 14px; }
+.hdr-date { font-size: 12px; color: var(--text3); }
+.theme-toggle {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 9px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer; font-size: 15px;
+  transition: all .2s;
+}
+.theme-toggle:hover { transform: rotate(20deg); }
+
+/* ───── CHART ZONE ───── */
+.chart-zone {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 28px 0;
+}
+.chart-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; min-height: 28px;
+}
+.chart-eyebrow {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text3);
+  flex-shrink: 0;
+}
+/* legend default / hover-info on hover */
+.chart-right { display: flex; align-items: center; gap: 0; }
+.chart-legend {
+  display: flex; gap: 14px;
+  transition: opacity .15s;
+}
+.cl-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text2);
+}
+.cl-pip { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+
+/* hover info — replaces legend on bar hover */
+.chart-hover-info {
+  display: none;
+  align-items: center; gap: 16px;
+  font-size: 11px;
+}
+.chi-date { font-weight: 700; color: var(--text); }
+.chi-rows { display: flex; gap: 10px; }
+.chi-row  { display: flex; align-items: center; gap: 5px; color: var(--text2); }
+.chi-pip  { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
+
+/* bars area */
+.bars-wrap {
+  display: flex; align-items: flex-end; gap: 7px;
+  height: 100px;
+  position: relative;
+}
+/* baseline rule */
+.bars-wrap::after {
+  content: ''; position: absolute;
+  bottom: 28px; left: 0; right: 0;
+  height: 1px; background: var(--border);
+  pointer-events: none;
+}
+.bar-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; position: relative;
+}
+.bar-stack {
+  width: 100%;
+  display: flex; flex-direction: column-reverse;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+  transition: opacity .2s, filter .2s;
+}
+/* dim non-hovered bars when any bar is hovered */
+.bars-wrap:hover .bar-stack       { opacity: .45; filter: saturate(.7); }
+.bars-wrap:hover .bar-col:hover .bar-stack { opacity: 1; filter: saturate(1); }
+/* selected bar always full opacity */
+.bar-col.on .bar-stack { opacity: 1; filter: saturate(1); }
+/* selected indicator: dot under label */
+.bar-col.on .bar-lbl::after {
+  content: ''; display: block; margin: 4px auto 0;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--text);
+}
+.seg { width: 100%; }
+.bar-lbl {
+  margin-top: 6px;
+  font-size: 10px; font-variant-numeric: tabular-nums;
+  color: var(--text3); padding-bottom: 16px; text-align: center;
+  transition: color .15s, font-weight .15s;
+}
+.bar-col.on .bar-lbl { color: var(--text); font-weight: 700; }
+
+/* ───── BODY ───── */
+.body {
+  padding: 28px 28px 100px;
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ───── SIDEBAR ───── */
+.side {
+  position: sticky; top: 70px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.side-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--text3);
+  padding: 4px 10px 6px;
+}
+.side-item {
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.side-item:hover { background: var(--surface); }
+.side-item.on {
+  background: var(--surface);
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+.si-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 7px;
+}
+.si-name {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600; color: var(--text);
+}
+.si-pip { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+.si-count { font-size: 10px; color: var(--text3); }
+.mini-spark { display: flex; align-items: flex-end; gap: 2px; height: 18px; }
+.ms-bar { flex: 1; border-radius: 2px; min-height: 2px; transition: opacity .2s; }
+.side-item:hover .ms-bar { opacity: .65; }
+
+/* ───── MAIN ───── */
+.main { min-width: 0; }
+
+/* Digest */
+.digest {
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 2px 20px rgba(0,0,0,.06);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; gap: 0;
+  animation: slideDown .25s cubic-bezier(.34,1.3,.64,1);
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dg-date { min-width: 130px; }
+.dg-date-big {
+  font-size: 22px; font-weight: 800; letter-spacing: -.04em; line-height: 1;
+  margin-bottom: 3px;
+}
+.dg-date-sub { font-size: 11px; color: var(--text2); }
+.dg-sep { width: 1px; height: 44px; background: var(--border); margin: 0 22px; flex-shrink: 0; }
+.dg-stats { display: flex; gap: 28px; flex: 1; }
+.dg-s-val {
+  font-size: 20px; font-weight: 800; letter-spacing: -.03em;
+  line-height: 1;
+}
+.dg-s-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.dg-warn {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: rgba(240,165,0,.08);
+  border: 1px solid rgba(240,165,0,.22);
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-size: 11.5px; line-height: 1.5;
+  color: var(--text2); max-width: 240px;
+}
+.dg-warn-icon { font-size: 13px; margin-top: 1px; flex-shrink: 0; }
+
+/* Filter pills */
+.filter-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.fp {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all .2s;
+  color: var(--text2);
+}
+.fp:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.08); color: var(--text); }
+.fp.on {
+  background: var(--text);
+  color: var(--bg);
+  border-color: transparent;
+  box-shadow: 0 3px 12px rgba(0,0,0,.15);
+}
+.fp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.fp.on .fp-dot { background: var(--bg) !important; }
+
+/* Session groups */
+.grp { margin-bottom: 10px; }
+.grp-hd {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 4px; padding: 0 2px;
+}
+.grp-bar { width: 3px; height: 16px; border-radius: 2px; flex-shrink: 0; }
+.grp-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.grp-meta { font-size: 11px; color: var(--text3); margin-left: auto; }
+
+/* Session cards */
+.sc {
+  background: var(--surface);
+  border-radius: 12px;
+  margin-bottom: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  transition: box-shadow .2s, transform .2s;
+  cursor: pointer;
+}
+.sc:hover { box-shadow: 0 4px 20px rgba(0,0,0,.1); transform: translateY(-1px); }
+.sc-main {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 13px 16px;
+}
+.sc-left { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 36px; flex-shrink: 0; }
+.sc-time { font-size: 10.5px; color: var(--text3); font-variant-numeric: tabular-nums; }
+.sc-agent {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-weight: 900; letter-spacing: .04em;
+}
+.ag-cx { background: rgba(91,94,244,.12); color: var(--codex); }
+.ag-cc { background: rgba(232,96,28,.12); color: var(--claude); }
+.sc-dur { font-size: 10px; color: var(--text3); }
+.sc-dur.live { color: var(--live); font-weight: 700; }
+
+.sc-body { flex: 1; min-width: 0; padding-top: 2px; }
+.sc-task {
+  font-size: 13.5px; line-height: 1.45; color: var(--text);
+  margin-bottom: 7px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.sc-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.tg {
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  transition: background .15s;
+}
+
+/* Expandable resume panel */
+.sc-expand {
+  max-height: 0; overflow: hidden;
+  transition: max-height .3s cubic-bezier(.4,0,.2,1), opacity .25s;
+  opacity: 0;
+  background: var(--bg);
+  box-shadow: inset 0 1px 0 var(--border);
+}
+.sc.open .sc-expand { max-height: 80px; opacity: 1; }
+.sc-expand-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+}
+.sc-cmd {
+  font-size: 11px; font-family: 'SF Mono','Fira Code','Menlo',monospace;
+  color: var(--text2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  min-width: 0; flex: 1; margin-right: 12px;
+}
+.resume-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 700;
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--text); color: var(--bg);
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.resume-btn:hover { transform: scale(1.04); box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+.resume-btn.done { background: var(--live); }
+.resume-btn svg { flex-shrink: 0; }
+
+/* live glow ring on session card */
+.sc.live-sc {
+  box-shadow: 0 0 0 1.5px rgba(34,197,94,.35), 0 1px 4px rgba(0,0,0,.05);
+}
+.sc.live-sc:hover {
+  box-shadow: 0 0 0 2px rgba(34,197,94,.5), 0 6px 20px rgba(0,0,0,.1);
+}
+
+/* page fade-in for session list */
+.main-fade { animation: fadeUp .3s cubic-bezier(.4,0,.2,1); }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════
+   RWD
+═══════════════════════════════ */
+
+/* ── Tablet (≤900px): collapse sidebar ── */
+@media (max-width: 900px) {
+  .body {
+    grid-template-columns: 1fr;
+    padding: 20px 20px 80px;
+    gap: 16px;
+  }
+  .side { display: none; }
+  .hdr-date { display: none; }
+  .chart-zone { padding: 16px 20px 0; }
+}
+
+/* ── Mobile landscape / small tablet (≤680px) ── */
+@media (max-width: 680px) {
+  /* Header: condense live badges into a single count pill */
+  .hdr { padding: 0 16px; gap: 10px; }
+  .hdr-live { display: none; }
+  .hdr-logo { margin-right: 0; }
+  .hdr-right { gap: 8px; }
+
+  /* Live strip moves below header as a scrollable row */
+  .live-row-mobile {
+    display: flex !important;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 8px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .live-row-mobile::-webkit-scrollbar { display: none; }
+
+  /* Chart */
+  .chart-zone { padding: 14px 16px 0; }
+  .chart-legend { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .cl-item { font-size: 10px; }
+  .bars-wrap { height: 80px; gap: 4px; }
+
+  /* Body */
+  .body { padding: 16px 16px 80px; }
+
+  /* Digest card: stack vertically */
+  .digest {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+  }
+  .dg-sep { width: 100%; height: 1px; margin: 0; }
+  .dg-stats { gap: 20px; }
+  .dg-warn { max-width: 100%; }
+
+  /* Filter pills: horizontal scroll */
+  .filter-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    gap: 5px;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .fp { flex-shrink: 0; }
+
+  /* Session expand: stack command + button */
+  .sc-expand-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .sc-cmd { max-width: 100%; margin-right: 0; }
+  .resume-btn { align-self: flex-end; }
+  .sc.open .sc-expand { max-height: 120px; }
+}
+
+/* ── Mobile portrait (≤420px) ── */
+@media (max-width: 420px) {
+  .logo-name-text { display: none; }          /* hide text, keep gem */
+  .hdr-logo { margin-right: 0; }
+
+  .digest { padding: 14px; }
+  .dg-date-big { font-size: 18px; }
+  .dg-stats { gap: 16px; }
+  .dg-s-val { font-size: 17px; }
+
+  .sc-main { gap: 8px; padding: 11px 12px; }
+  .sc-task { font-size: 13px; }
+  .sc-left { width: 30px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="logo-gem"></div>
+    <span class="logo-name-text">Job Monitor</span>
+  </div>
+  <div class="hdr-live" id="liveStrip"></div>
+  <div class="hdr-right">
+    <span class="hdr-date" id="hdrDate"></span>
+    <div class="theme-toggle" id="themeBtn">◑</div>
+  </div>
+</header>
+<!-- Mobile live row (shown only on small screens via CSS) -->
+<div class="live-row-mobile" id="liveRowMobile" style="display:none"></div>
+
+<!-- CHART -->
+<div class="chart-zone">
+  <div class="chart-top">
+    <span class="chart-eyebrow">7-day activity</span>
+    <div class="chart-right">
+      <div class="chart-legend" id="legend"></div>
+      <div class="chart-hover-info" id="hoverInfo">
+        <span class="chi-date" id="hiDate"></span>
+        <div class="chi-rows" id="hiRows"></div>
+      </div>
+    </div>
+  </div>
+  <div class="bars-wrap" id="bars"></div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+  <nav class="side" id="sidebar"></nav>
+  <div class="main" id="main"></div>
+</div>
+
+<script>
+/* ── DATA ─────────────────────────────────────────── */
+const PROJECTS = [
+  { key:'harbor',   label:'harbor',                color:'var(--p1)', shade:'var(--p1s)' },
+  { key:'portal',   label:'owlpay_harbor_portal',  color:'var(--p2)', shade:'var(--p2s)' },
+  { key:'landing',  label:'owlpay_landing_page',   color:'var(--p3)', shade:'var(--p3s)' },
+  { key:'delivery', label:'global-delivery',       color:'var(--p4)', shade:'var(--p4s)' },
+];
+
+// daily[i] = [harbor_mins, portal_mins, landing_mins, delivery_mins], i=0 is 6 days ago
+const DAILY = [
+  { d:'Jun 4',  m:[80,40,0,0]    },
+  { d:'Jun 5',  m:[270,0,50,0]   },
+  { d:'Jun 6',  m:[0,90,0,0]     },
+  { d:'Jun 7',  m:[20,0,0,180]   },
+  { d:'Jun 8',  m:[130,0,45,0]   },
+  { d:'Jun 9',  m:[310,70,0,0]   },
+  { d:'Jun 10', m:[185,0,18,0]   },
+];
+
+const SESSIONS = {
+  'Jun 10': [
+    { proj:'harbor', time:'14:32', agent:'codex', task:'查看並審閱這個計劃，告訴我你的結論 — docs/plans/2026-06-09-harbor-301-mfa-contract-fixes.md', branch:'main', model:'gpt-5.5', dur:'live', id:'019eaabc-592d-7aa3-b920', cwd:'/home/ubuntu/Code/owlting/harbor' },
+    { proj:'harbor', time:'11:05', agent:'codex', task:'查看前端 portal 專案中的 feat/HARBOR-302 分支，比對後端 api 專案的 PR #308，統整後端實作狀況，前端是否需要調整', branch:'main', model:'gpt-5.5', dur:'4h 15m', id:'019dff12-a1b2-7c3d-ef45', cwd:'/home/ubuntu/Code/owlting/harbor' },
+    { proj:'landing', time:'09:17', agent:'codex', task:'針對 feat/seo-fixes 這個分支今天的所有 commit，告訴我她想解決什麼問題？以及是否為有效的方法？還有缺漏的地方嗎？', branch:'feat/seo-fixes', model:'gpt-5.5', dur:'18m', id:'019dfe99-0011-7b2a-cc33', cwd:'/home/ubuntu/Code/owlting/owlpay_landing_page' },
+    { proj:'harbor', time:'08:53', agent:'claude', task:'在這個專案建立一個可以讓我常駐的監控台，主要拉取全域 claude 與 codex 的工作歷程進度', branch:'HEAD', model:'claude-sonnet', dur:'live', id:'175a0c83-839a-4fd1-b28f-aa8a9688c14c', cwd:'/home/ubuntu/Code/owlting/job-monitor' },
+  ],
+  'Jun 9': [
+    { proj:'harbor', time:'15:41', agent:'codex', task:'查看前端 portal 專案中的 HARBOR-313 worktree，比對後端 api 專案的 PR #308，統整後端實作狀況，前端是否需要調整', branch:'main', model:'gpt-5.5', dur:'2h 08m', id:'019eab5a-d147-7243-a617', cwd:'/home/ubuntu/Code/owlting/harbor' },
+    { proj:'harbor', time:'11:32', agent:'codex', task:'查看並審閱這個計劃的完成度 — docs/plans/2026-06-09-harbor-301-mfa-contract-fixes.md', branch:'main', model:'gpt-5.5', dur:'1h 45m', id:'019eaabc-0000-1111-2222', cwd:'/home/ubuntu/Code/owlting/harbor' },
+    { proj:'portal', time:'09:04', agent:'claude', task:'查看底下 portal 這個前端專案的 PR #92，reviewer feedback 後另一位工程師的結論是部分 blocking feedback 的修法有漏洞', branch:'main', model:'claude-sonnet', dur:'1h 22m', id:'175a0c83-0000-1111-2222', cwd:'/home/ubuntu/Code/owlting/owlpay_harbor_portal' },
+  ],
+  'Jun 8': [
+    { proj:'harbor', time:'14:10', agent:'codex', task:'實作 HARBOR-313 MFA 前端流程，對應後端 API contract v2，完整覆蓋 enrollment / recovery / totp 三個路徑', branch:'feat/HARBOR-313', model:'gpt-5.5', dur:'2h 18m', id:'019dff00-1122-3344-5566', cwd:'/home/ubuntu/Code/owlting/harbor' },
+    { proj:'landing', time:'09:30', agent:'codex', task:'分析 SEO 優化需求，針對 landing page 的 meta tag 與 structured data 提出改進方案', branch:'feat/seo', model:'gpt-5.5', dur:'45m', id:'019dfe00-aabb-ccdd-eeff', cwd:'/home/ubuntu/Code/owlting/owlpay_landing_page' },
+  ],
+};
+
+/* ── STATE ────────────────────────────────────────── */
+let selDay = 'Jun 9';
+let selProj = 'all';
+let openCard = null;
+
+/* ── RENDER: HEADER ──────────────────────────────── */
+function renderHeader() {
+  document.getElementById('hdrDate').textContent = 'Tue, Jun 10';
+  const liveSessions = [
+    { agent:'codex',  label:'Codex',  proj:'harbor',      branch:'main', t:'1h 32m' },
+    { agent:'claude', label:'Claude', proj:'job-monitor', branch:'HEAD', t:'47m'    },
+  ];
+  const badgeHtml = liveSessions.map(l => `
+    <div class="live-badge">
+      <div class="lbdot"></div>
+      <span class="lb-agent" style="color:${l.agent==='codex'?'var(--codex)':'var(--claude)'}">${l.label}</span>
+      ${l.proj} / ${l.branch} · ${l.t}
+    </div>`).join('');
+  document.getElementById('liveStrip').innerHTML     = badgeHtml;
+  document.getElementById('liveRowMobile').innerHTML = badgeHtml;
+}
+
+/* ── RENDER: CHART ───────────────────────────────── */
+function renderChart() {
+  // Legend
+  document.getElementById('legend').innerHTML = PROJECTS.map(p =>
+    `<div class="cl-item"><div class="cl-pip" style="background:${p.color}"></div>${p.label.replace('owlpay_harbor_','portal').replace('owlpay_landing_page','landing').replace('global-delivery','delivery')}</div>`
+  ).join('');
+
+  const container = document.getElementById('bars');
+  container.innerHTML = '';
+  const maxT = Math.max(...DAILY.map(d => d.m.reduce((a,b)=>a+b,0)));
+  const legend  = document.getElementById('legend');
+  const hInfo   = document.getElementById('hoverInfo');
+  const hiDate  = document.getElementById('hiDate');
+  const hiRows  = document.getElementById('hiRows');
+
+  DAILY.forEach(day => {
+    const total = day.m.reduce((a,b)=>a+b,0);
+    const hPx   = Math.max(4, Math.round((total / maxT) * 84));
+    const isOn  = day.d === selDay;
+
+    const col = document.createElement('div');
+    col.className = 'bar-col' + (isOn ? ' on' : '');
+    col.onclick = () => selectDay(day.d);
+
+    // Hover: swap legend → inline hover info
+    col.addEventListener('mouseenter', () => {
+      legend.style.display = 'none';
+      hInfo.style.display  = 'flex';
+      hiDate.textContent   = day.d;
+      hiRows.innerHTML     = PROJECTS
+        .map((p,i) => day.m[i] > 0
+          ? `<div class="chi-row"><div class="chi-pip" style="background:${p.color}"></div>${day.m[i]}m</div>`
+          : '').join('');
+    });
+    col.addEventListener('mouseleave', () => {
+      legend.style.display = '';
+      hInfo.style.display  = 'none';
+    });
+
+    // Stack
+    const stack = document.createElement('div');
+    stack.className = 'bar-stack';
+    stack.style.height = hPx + 'px';
+
+    PROJECTS.forEach((p, i) => {
+      if (day.m[i] === 0) return;
+      const seg = document.createElement('div');
+      seg.className = 'seg';
+      seg.style.cssText = `height:${(day.m[i]/total)*100}%;background:${p.color};`;
+      stack.appendChild(seg);
+    });
+
+    const lbl = document.createElement('div');
+    lbl.className = 'bar-lbl';
+    lbl.textContent = day.d.replace('Jun ','');
+
+    col.appendChild(stack);
+    col.appendChild(lbl);
+    container.appendChild(col);
+  });
+}
+
+/* ── RENDER: SIDEBAR ─────────────────────────────── */
+function renderSidebar() {
+  const maxT = Math.max(...DAILY.map(d => d.m.reduce((a,b)=>a+b,0)), 1);
+  const allTotals = DAILY.map(d => d.m.reduce((a,b)=>a+b,0));
+
+  let html = `<div class="side-label">Filter</div>`;
+
+  const items = [
+    { key:'all', label:'All projects', color:'var(--text3)', spark: allTotals },
+    ...PROJECTS.map((p,i) => ({ key:p.key, label:p.label, color:p.color, spark: DAILY.map(d=>d.m[i]) }))
+  ];
+
+  items.forEach(item => {
+    const sMax = Math.max(...item.spark, 1);
+    const bars = item.spark.map(v => {
+      const h = Math.max(2, Math.round((v/sMax)*16));
+      return `<div class="ms-bar" style="height:${h}px;background:${item.color};opacity:${v>0?.75:.12}"></div>`;
+    }).join('');
+    const count = item.key === 'all' ? 12
+      : (Object.values(SESSIONS).flat().filter(s => s.proj === item.key).length);
+
+    html += `
+      <div class="side-item ${selProj===item.key?'on':''}" onclick="filterProj('${item.key}',this)">
+        <div class="si-top">
+          <span class="si-name">
+            <span class="si-pip" style="background:${item.color}"></span>
+            ${item.label.replace('owlpay_','owlpay_')}
+          </span>
+          <span class="si-count">${count}</span>
+        </div>
+        <div class="mini-spark">${bars}</div>
+      </div>`;
+  });
+
+  document.getElementById('sidebar').innerHTML = html;
+}
+
+/* ── RENDER: DIGEST ──────────────────────────────── */
+function renderDigest(day) {
+  const ss = (SESSIONS[day]||[]);
+  const dayData = DAILY.find(d=>d.d===day) || { m:[0,0,0,0] };
+  const totalMin = dayData.m.reduce((a,b)=>a+b,0);
+  const h = Math.floor(totalMin/60), m = totalMin%60;
+  const durStr = h>0 ? `${h}h ${m}m` : `${m}m`;
+  const projs = [...new Set(ss.map(s=>s.proj))].length;
+  const longDone = ss.filter(s => s.dur !== 'live' && (s.dur.includes('h') || parseInt(s.dur)>=90));
+  const isToday = day === 'Jun 10', isYest = day === 'Jun 9';
+  const dayLabel = isToday ? 'Today' : isYest ? 'Yesterday' : day;
+
+  return `<div class="digest">
+    <div class="dg-date">
+      <div class="dg-date-big">${dayLabel}</div>
+      <div class="dg-date-sub">${day}, 2026</div>
+    </div>
+    <div class="dg-sep"></div>
+    <div class="dg-stats">
+      <div><div class="dg-s-val" data-count="${ss.length}">0</div><div class="dg-s-lbl">sessions</div></div>
+      <div><div class="dg-s-val" data-count="${projs}">0</div><div class="dg-s-lbl">projects</div></div>
+      <div><div class="dg-s-val">${durStr}</div><div class="dg-s-lbl">total time</div></div>
+    </div>
+    ${longDone.length ? `
+    <div class="dg-sep" style="margin-left:auto"></div>
+    <div class="dg-warn">
+      <span class="dg-warn-icon">⚠</span>
+      <span>${longDone.length} long session${longDone.length>1?'s':''} — may need follow-up</span>
+    </div>` : ''}
+  </div>`;
+}
+
+/* ── RENDER: SESSIONS ────────────────────────────── */
+function renderSessions(day, proj) {
+  let ss = SESSIONS[day]||[];
+  if (proj !== 'all') ss = ss.filter(s => s.proj === proj);
+  if (!ss.length) return `<div style="color:var(--text3);padding:20px 0">No sessions for this filter.</div>`;
+
+  // Group by project
+  const groups = {};
+  ss.forEach(s => { (groups[s.proj]||=[]).push(s); });
+
+  return Object.entries(groups).map(([pk, rows]) => {
+    const p = PROJECTS.find(x=>x.key===pk);
+    const cards = rows.map(s => {
+      const isLive = s.dur === 'live';
+      const cmd = s.agent === 'codex'
+        ? `cd ${s.cwd} && codex resume ${s.id}`
+        : `cd ${s.cwd} && claude --resume ${s.id}`;
+      return `
+        <div class="sc ${isLive?'live-sc':''}" onclick="toggleCard(this)">
+          <div class="sc-main">
+            <div class="sc-left">
+              <div class="sc-time">${s.time}</div>
+              <div class="sc-agent ${s.agent==='codex'?'ag-cx':'ag-cc'}">${s.agent==='codex'?'CX':'CC'}</div>
+              <div class="sc-dur ${isLive?'live':''}">${isLive?'live':s.dur}</div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-task">${s.task}</div>
+              <div class="sc-tags">
+                <span class="tg">${s.branch}</span>
+                <span class="tg">${s.model}</span>
+              </div>
+            </div>
+          </div>
+          <div class="sc-expand">
+            <div class="sc-expand-inner">
+              <div class="sc-cmd">${cmd}</div>
+              <div class="resume-btn" onclick="copyCmd(this,'${cmd}',event)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy &amp; Resume
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `<div class="grp">
+      <div class="grp-hd">
+        <div class="grp-bar" style="background:${p.color}"></div>
+        <span class="grp-name">${p.label}</span>
+        <span class="grp-meta">${rows.length} session${rows.length>1?'s':''}</span>
+      </div>
+      ${cards}
+    </div>`;
+  }).join('');
+}
+
+/* ── MAIN RENDER ─────────────────────────────────── */
+function renderMain() {
+  const el = document.getElementById('main');
+  el.innerHTML = `<div class="main-fade">${renderDigest(selDay)}
+    <div class="filter-row" id="filterRow"></div>
+    ${renderSessions(selDay, selProj)}
+  </div>`;
+  renderFilterPills();
+  countUp();
+}
+
+function renderFilterPills() {
+  const row = document.getElementById('filterRow');
+  if (!row) return;
+  const items = [
+    { key:'all', label:'All', color:'var(--text3)' },
+    ...PROJECTS.map(p => ({ key:p.key, label:p.label.replace('owlpay_harbor_','').replace('owlpay_',''), color:p.color }))
+  ];
+  row.innerHTML = items.map(it => `
+    <div class="fp ${selProj===it.key?'on':''}" onclick="filterProj('${it.key}',null)">
+      <div class="fp-dot" style="background:${selProj===it.key?'var(--bg)':it.color}"></div>
+      ${it.label}
+    </div>`).join('');
+}
+
+/* ── INTERACTIONS ────────────────────────────────── */
+function selectDay(d) {
+  selDay = d;
+  renderChart();
+  renderMain();
+  renderSidebar();
+}
+
+function filterProj(key) {
+  selProj = key;
+  renderSidebar();
+  renderMain();
+}
+
+function toggleCard(el) {
+  if (openCard && openCard !== el) openCard.classList.remove('open');
+  el.classList.toggle('open');
+  openCard = el.classList.contains('open') ? el : null;
+}
+
+function copyCmd(btn, cmd, e) {
+  e.stopPropagation();
+  navigator.clipboard?.writeText(cmd).catch(()=>{});
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✓ Copied!';
+  btn.classList.add('done');
+  setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('done'); }, 1800);
+}
+
+function countUp() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = +el.dataset.count;
+    let cur = 0;
+    const step = Math.ceil(target / 12);
+    const t = setInterval(() => {
+      cur = Math.min(cur + step, target);
+      el.textContent = cur;
+      if (cur >= target) clearInterval(t);
+    }, 40);
+  });
+}
+
+function toggleTheme() {
+  const h = document.documentElement;
+  h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', h.dataset.theme);
+}
+
+document.getElementById('themeBtn').onclick = toggleTheme;
+const saved = localStorage.getItem('theme');
+if (saved) document.documentElement.dataset.theme = saved;
+
+/* ── INIT ─────────────────────────────────────────── */
+renderHeader();
+renderChart();
+renderSidebar();
+renderMain();
+</script>
+</body>
+</html>
