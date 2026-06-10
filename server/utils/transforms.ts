@@ -3,7 +3,7 @@ import { basename } from 'path'
 
 export interface HistorySession {
   id: string
-  agent: 'codex'
+  agent: 'codex' | 'claude'
   project: string
   cwd: string
   title: string
