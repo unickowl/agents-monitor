@@ -113,9 +113,24 @@ function toggle(id: string) {
 }
 
 async function copy(s: HistorySession) {
-  await navigator.clipboard.writeText(s.resumeCmd).catch(() => {})
+  const text = s.resumeCmd
+  if (navigator.clipboard) {
+    await navigator.clipboard.writeText(text).catch(() => fallbackCopy(text))
+  } else {
+    fallbackCopy(text)
+  }
   copiedId.value = s.id
   setTimeout(() => { copiedId.value = null }, 1600)
+}
+
+function fallbackCopy(text: string) {
+  const el = document.createElement('textarea')
+  el.value = text
+  el.style.cssText = 'position:fixed;opacity:0'
+  document.body.appendChild(el)
+  el.select()
+  document.execCommand('copy')
+  document.body.removeChild(el)
 }
 </script>
 
