@@ -1,6 +1,8 @@
 <!-- pages/index.vue -->
 <template>
   <div>
+    <TheLoader :done="loaded" />
+
     <AppHeader :live-sessions="liveSessions" />
 
     <HeroBrief
@@ -35,6 +37,8 @@
 <script setup lang="ts">
 const { liveSessions, history, selectedDay, dayHistory, projDailyMinutes, refreshHistory, startPolling, stopPolling } = useMonitor()
 
+const loaded = ref(false)
+
 const COLOR_PALETTE = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#f97316']
 
 const projColorMap = computed(() => {
@@ -53,7 +57,11 @@ const groupedSessions = computed((): [string, typeof dayHistory.value][] => {
 })
 
 onMounted(async () => {
-  await refreshHistory()
+  await Promise.all([
+    refreshHistory(),
+    new Promise(r => setTimeout(r, 1400)),
+  ])
+  loaded.value = true
   startPolling()
 })
 
