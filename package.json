@@ -1,0 +1,21 @@
+{
+  "name": "job-monitor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --port 3030",
+    "build": "nuxt build",
+    "test": "vitest run",
+    "test:ui": "vitest --ui"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "nuxt": "^3.17.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@vitest/ui": "^3.2.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  }
+}
