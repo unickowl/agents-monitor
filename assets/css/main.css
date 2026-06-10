@@ -1,25 +1,79 @@
-/* main.css */
+/* assets/css/main.css */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 :root {
-  --color-bg: #0d0d0d;
-  --color-surface: #1a1a1a;
-  --color-border: #2a2a2a;
-  --color-text: #e0e0e0;
-  --color-muted: #888;
-  --color-accent: #00dc82;
+  --bg: #f6f6f4;
+  --surface: #ffffff;
+  --surface-2: #ededeb;
+  --text: #0e0e0c;
+  --muted: #69695f;
+  --faint: #a8a89c;
+  --border: #e2e2dc;
+  --border-strong: #c4c4bc;
+  --accent: #2563eb;
+  --live: #16a34a;
+  --live-bg: #f0fdf4;
+  --live-border: #bbf7d0;
+  --codex: #4f46e5;
+  --claude: #ea580c;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --warn-border: #fde68a;
+  --ff: 'Outfit', system-ui, sans-serif;
+  --mono: 'DM Mono', 'Fira Mono', 'Consolas', monospace;
+  --r: 5px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+[data-theme="dark"] {
+  --bg: #0b0b09;
+  --surface: #141412;
+  --surface-2: #1c1c1a;
+  --text: #eeeee8;
+  --muted: #8a8a7e;
+  --faint: #525248;
+  --border: #242420;
+  --border-strong: #38382e;
+  --accent: #3b82f6;
+  --live: #22c55e;
+  --live-bg: #0c2014;
+  --live-border: #166534;
+  --codex: #818cf8;
+  --claude: #fb923c;
+  --warn: #fbbf24;
+  --warn-bg: #1c1a08;
+  --warn-border: #78350f;
 }
+
+html { font-size: 16px; }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: system-ui, sans-serif;
-  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ff);
+  font-weight: 400;
   line-height: 1.5;
+  min-height: 100vh;
+  transition: background .22s, color .22s;
+}
+
+/* ── Shared layout ── */
+.hd, .brief, .strip-inner, .strip-info, .sess-wrap {
+  padding-left: 32px;
+  padding-right: 32px;
+}
+
+/* ── Live chip pulse ── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .4; transform: scale(.7); }
+}
+
+@media (max-width: 680px) {
+  .hd, .brief, .strip-inner, .strip-info, .sess-wrap {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
