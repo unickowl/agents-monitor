@@ -44,9 +44,13 @@ export function useMonitor() {
   }
 
   async function refreshHistory() {
-    history.value = await $fetch<HistorySession[]>('/api/history', {
-      params: { since: 7 },
-    })
+    try {
+      history.value = await $fetch<HistorySession[]>('/api/history', {
+        params: { since: 7 },
+      })
+    } catch {
+      // non-fatal — keep previous value
+    }
   }
 
   let _interval: ReturnType<typeof setInterval> | null = null
