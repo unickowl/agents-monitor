@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev --port 3030",
+    "dev": "nuxt dev",
     "build": "nuxt build",
     "test": "vitest run",
     "test:ui": "vitest --ui"
